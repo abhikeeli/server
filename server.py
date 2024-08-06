@@ -1,4 +1,4 @@
-from flask import Flask,request
+from flask import Flask,request,jsonify,url_for
 from flask_sqlalchemy import SQLAlchemy
 app=Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI']='sqlite:///data.db'
@@ -11,12 +11,25 @@ def index():
     return 'Hello!'
 @app.route('/drinks')
 def get_drinks():
-    drinks=Drink.query.all()
+    filters=request.args
     output=[]
-    for drink in drinks:
-        drink_data={'name':drink.name , 'description':drink.description}
-        output.append(drink_data)
-    return{"drink":output}
+    if 'name' in filters :
+        name=dict(filters)
+        name=name['name']
+        drinks=Drink.query.filter(Drink.name==name).all()
+        print(drinks)
+        for drink in drinks:
+            drink_data={'name':drink.name , 'description':drink.description}
+            output.append(drink_data)
+        return jsonify({"drink":output})
+    else:
+        drinks=Drink.query.all()
+        for drink in drinks:
+            drink_data={'name':drink.name , 'description':drink.description}
+            print(drink.name)
+            output.append(drink_data)
+        return jsonify({"drink":output})
+
 @app.route('/drinks/<id>')
 def get_onedrink(id):
     drink=Drink.query.get_or_404(id)
@@ -27,6 +40,8 @@ def new_drink():
     db.session.add(drink)
     db.session.commit()
     return {'<id>':drink.id}
+    
+
 
 @app.route('/drinks/<id>', methods=['DELETE'])
 def rem_drink(id):
@@ -37,3 +52,5 @@ def rem_drink(id):
     db.session.delete(drink)
     db.session.commit()
     return {"status":"deleted"}
+
+
